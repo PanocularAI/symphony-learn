@@ -4,14 +4,18 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from torchtitan.components.loss import build_cross_entropy_loss
-from torchtitan.components.lr_scheduler import build_lr_schedulers
-from torchtitan.components.optimizer import build_optimizers
-from torchtitan.components.tokenizer import build_hf_tokenizer
-from torchtitan.components.validate import build_validator
-from torchtitan.datasets.hf_datasets import build_hf_dataloader
-from torchtitan.distributed.pipeline_parallel import pipeline_llm
-from torchtitan.protocols.train_spec import TrainSpec
+try:
+    from torchtitan.components.loss import build_cross_entropy_loss
+    from torchtitan.components.lr_scheduler import build_lr_schedulers
+    from torchtitan.components.optimizer import build_optimizers
+    from torchtitan.components.tokenizer import build_hf_tokenizer
+    from torchtitan.components.validate import build_validator
+    from torchtitan.hf_datasets.text_datasets import build_hf_data_loader as build_hf_dataloader
+    from torchtitan.distributed.pipeline_parallel import pipeline_llm
+    from torchtitan.protocols.train_spec import TrainSpec
+    _TRAINING_IMPORTS_AVAILABLE = True
+except ImportError:
+    _TRAINING_IMPORTS_AVAILABLE = False
 
 from .infra.parallelize import parallelize_llama
 from .model.args import TransformerModelArgs
@@ -69,7 +73,12 @@ llama3_args = {
 }
 
 
-def get_train_spec() -> TrainSpec:
+def get_train_spec():
+    if not _TRAINING_IMPORTS_AVAILABLE:
+        raise ImportError(
+            "Training components not available. "
+            "Make sure torchtitan is properly installed and in sys.path."
+        )
     return TrainSpec(
         model_cls=Transformer,
         model_args=llama3_args,
