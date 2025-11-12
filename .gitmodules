@@ -4,3 +4,7 @@
 [submodule "torchft"]
 	path = torchft
 	url = git@github.com:PanocularAI/torchft.git
+[submodule "dace"]
+	path = dace
+	url = https://github.com/spcl/dace.git
+	branch = dace_ad_matmul_perf
