@@ -14,7 +14,7 @@ from torchtitan.distributed.pipeline_parallel import pipeline_llm
 from torchtitan.hf_datasets.text_datasets import build_text_dataloader
 from torchtitan.protocols.train_spec import TrainSpec
 
-from ..llama3 import llama3_args, Llama3StateDictAdapter, parallelize_llama, Transformer
+from torchtitan.models.llama3 import llama3_args, Llama3StateDictAdapter, parallelize_llama, Transformer
 
 
 def get_train_spec() -> TrainSpec:

@@ -24,7 +24,7 @@ enable_wandb = false
 name = "llama3"
 flavor = "debugmodel"
 # test folder with tokenizer.json, for debug purpose only
-hf_assets_path = "./tests/assets/tokenizer"
+hf_assets_path = "./torchtitan/tests/assets/tokenizer"
 # converters = ["float8"]
 
 [optimizer]
@@ -89,5 +89,5 @@ enable = true
 sync_steps = 10
 num_fragments = 2
 semi_sync_method = "diloco"
-process_group = "nccl"
+process_group = "gloo"
 process_group_timeout_ms = 10000
