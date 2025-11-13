@@ -1,0 +1,46 @@
+# sky_vast_cluster.yaml
+# SkyPilot configuration to launch a 2-node cluster on Vast.ai
+
+name: nebius-cluster-2nodes
+
+resources:
+  # Specify the Vast provider and GPU configuration
+  infra: nebius
+  accelerators: {h100:1}   # 4 GPUs per node, change to desired GPU model
+  #disk_size: 200           # optional: 200GB disk per node
+  #use_spot: true           # Vast.ai runs on spot instances
+
+num_nodes: 2               # total nodes in cluster
+
+setup: |
+  # Commands run on each node before starting the task
+  echo "Setting up environment..."
+  #wget https://github.com/protocolbuffers/protobuf/releases/download/v32.0/protoc-32.0-linux-x86_64.zip
+  #unzip protoc-32.0-linux-x86_64.zip -d $HOME/.local
+  #echo 'export PATH=$PATH:$HOME/.local/bin' >> ~/.bashrc
+  #source ~/.bashrc
+  sudo apt-get update -y
+  sudo apt install -y protobuf-compiler
+  curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg | sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
+  curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.tailscale-keyring.list | sudo tee /etc/apt/sources.list.d/tailscale.list
+  sudo apt-get update -y
+  sudo apt install -y tailscale
+  
+  curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- -y
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  git clone --recursive https://github.com/PanocularAI/symphony-learn.git
+  cd symphony-learn
+  uv venv dtrain_venv --python 3.12
+  source dtrain_venv/bin/activate
+  uv pip install --pre torch --index-url https://download.pytorch.org/whl/nightly/cu126 --force-reinstall
+  uv pip install -r torchtitan/requirements.txt
+  uv pip install ./torchtitan
+  uv pip install ./torchft
+
+
+run: |
+  # Commands run after setup to verify cluster status
+  echo "Running on $(hostname)"
+  nvidia-smi
+  echo "GPU count: $(nvidia-smi -L | wc -l)"
+  echo "All nodes are ready."

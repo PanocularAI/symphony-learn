@@ -40,12 +40,13 @@ source dtrain_venv/bin/activate
 
 3. Clone the repository with:
 ```
-git clone --recursive git@github.com:PanocularAI/symphony-learn.git
+git clone --recursive https://github.com/PanocularAI/symphony-learn.git
 ```
 Make sure that you all pull the submodules using `--recursive` flag.
 
 4. Install dependencies:
 ```bash
+apt install -y protobuf-compiler
 uv pip install --pre torch --index-url https://download.pytorch.org/whl/nightly/cu126 --force-reinstall
 uv pip install -r torchtitan/requirements.txt
 uv pip install ./torchtitan
