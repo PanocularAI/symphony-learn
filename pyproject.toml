@@ -1,0 +1,13 @@
+
+[project]
+name = "symphony-learn"
+version = "0.1.0"
+description = "Pytorch-native platform for hetetrogenous & decentralized training of large-scale AI models"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "PanocularAI team", email = "hello@panocular.ai" }]
+license = {file = "LICENSE"}
+
+dependencies = [
+
+]
