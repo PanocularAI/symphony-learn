@@ -1,8 +1,12 @@
 <div align="center">
 
+
+
 # SymphonyLearn
 
 #### A Pytorch-native platform for hetetrogenous & decentralized training of large-scale AI models
+
+![SymphonyLearn](docs/assets/symphonylearn.png)
 </div>
 
 ## Overview
@@ -25,53 +29,54 @@ HPC clusters vary widely in their node configurations (commonly with 4 or 8 GPUs
 * Lower the computational and financial barriers to AI research
 
 ## Getting Started
-### Install dependencies
-1. Before setting up the platform, you need to install `uv` and `rust`.
-```bash
-curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- -y
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-2. Create a uv virtual environment:
-```
-uv venv dtrain_venv --python 3.12
-source dtrain_venv/bin/activate
-```
-
-3. Clone the repository with:
+### Installing the framework
+First clone the repository with:
 ```
 git clone --recursive https://github.com/PanocularAI/symphony-learn.git
 ```
-Make sure that you all pull the submodules using `--recursive` flag.
+Make sure that you pull all submodules using `--recursive` flag.
 
-4. Install dependencies:
-```bash
-apt install -y protobuf-compiler
-uv pip install --pre torch --index-url https://download.pytorch.org/whl/nightly/cu126 --force-reinstall
-uv pip install -r torchtitan/requirements.txt
-uv pip install ./torchtitan
-uv pip install ./torchft
+To facilitate the installation of the framework, you may run the make file to automatically setup the dependencies and environment.
+```
+make all
 ```
 
-### Configure your HPC nodes
-(Add configuration details relevant to your implementation)
+However, it might be the case that any of the commands in the makefile fail due to incompatibility with your setup. Therefore, please refer to the detailed [Installation Guideline](docs/installation.md) for installing dependencies and troubleshooting. 
+
+### Setting up Tailscale VPN
+To establish communication between different compute islands, each compute node must have a routable public IP address.
+If public IPs are not available, it is recommended to use Tailscale. Please follow the [instructions](docs/installation.md#tailscale-setup) to setup the tailscale service on your machine.
+
 
 ### Launch the decentralized training
-To start training a model in a decentralized way, you need to execute the following three commands in different shell sessions:
+Here we explain a sample training of a llama3 model on two different islands in a decentralized way. 
+For a more detailed explanation, please refer to [Launching Training](docs/execution.md).
+
+You need to execute the following three commands in different shell sessions:
 
 1. Start the lighthouse engine.
 ```
-RUST_BACKTRACE=1 torchft_lighthouse --min_replicas 1 --quorum_tick_ms 100 --join_timeout_ms 10000
+RUST_BACKTRACE=1 torchft_lighthouse --bind=<public_ip>:29510 --min_replicas 1 --quorum_tick_ms 100 --join_timeout_ms 10000
 ```
 
 2. Run the training on the first island:
 ```
-NGPU=8 CONFIG_FILE="./models/llama3/train_configs/debug_model.toml" ./run_train.sh --fault_tolerance.enable --fault_tolerance.replica_id=0 --fault_tolerance.group_size=2
+TORCHFT_LIGHTHOUSE=http://<public_ip>:29510 \
+NNODES=1 \
+ISHOST=true \
+NGPU=1 \
+CONFIG_FILE="./models/llama3/train_configs/debug_model.toml" \
+./run_train.sh --fault_tolerance.enable --fault_tolerance.replica_id=0 --fault_tolerance.group_size=2
 ```
 
 3. Run the training on the second island:
 ```
-NGPU=8 CONFIG_FILE="./models/llama3/train_configs/debug_model.toml" ./run_train.sh --fault_tolerance.enable --fault_tolerance.replica_id=1 --fault_tolerance.group_size=2
+TORCHFT_LIGHTHOUSE=http://<public_ip>:29510 \
+NNODES=1 \
+ISHOST=true \
+NGPU=1 \ 
+CONFIG_FILE="./models/llama3/train_configs/debug_model.toml" \
+./run_train.sh --fault_tolerance.enable --fault_tolerance.replica_id=1 --fault_tolerance.group_size=2
 ```
 
 ## Acknowledgement
