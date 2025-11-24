@@ -1,15 +1,11 @@
 #!/usr/bin/bash
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-# All rights reserved.
-
-# This source code is licensed under the BSD-style license found in the
-# LICENSE file in the root directory of this source tree.
 
 set -ex
 
 # use envs as local overwrites for convenience
 # e.g.
 # LOG_RANK=0,1 NGPU=4 ./run_train.sh
+
 NGPU=${NGPU:-"8"}
 export LOG_RANK=${LOG_RANK:-0}
 CONFIG_FILE=${CONFIG_FILE:-"./torchtitan/models/llama3/train_configs/debug_model.toml"}
@@ -17,8 +13,20 @@ TRAIN_FILE=${TRAIN_FILE:-"train"}
 
 TORCHFT_LIGHTHOUSE=${TORCHFT_LIGHTHOUSE:-"http://localhost:29510"}
 
+MASTER_ADDR=${MASTER_ADDR:-"localhost"} # Set to the public IP of the master node (e.g. tailscale ip)
+MASTER_PORT=${MASTER_PORT:-"29500"}
+
+NNODES=${NNODES:-"1"} # Total number of nodes within an island
+ISHOST=${ISHOST:-"true"} # Set to true for the master node, false for other nodes in the same island
+
+export GLOO_SOCKET_IFNAME=tailscale0 # Hint Gloo to use desired network interface, in this case tailscale
+
 PYTORCH_ALLOC_CONF="expandable_segments:True" \
 TORCHFT_LIGHTHOUSE=${TORCHFT_LIGHTHOUSE} \
-torchrun --nproc_per_node=${NGPU} --rdzv_backend c10d --rdzv_endpoint="localhost:0" --local_addr="localhost" \
---local-ranks-filter ${LOG_RANK} --role rank --tee 3 \
+MASTER_ADDR=${MASTER_ADDR} \
+MASTER_PORT=${MASTER_PORT} \
+NNODES=${NNODES} \
+ISHOST=${ISHOST} \
+torchrun --nproc_per_node=${NGPU} --nnodes 1 --rdzv_id 101 --rdzv_backend c10d --rdzv_endpoint="${MASTER_ADDR}:${MASTER_PORT}" \
+--local_addr=${MASTER_ADDR} --rdzv-conf is_host=${ISHOST} --local-ranks-filter ${LOG_RANK} --role rank --tee 3 \
 -m ${TRAIN_FILE} --job.config_file ${CONFIG_FILE} "$@"
