@@ -20,7 +20,7 @@ all: setup-env install-torch install-torchtt-ft
 setup-env:
 	echo "Setting up environment..."
 	sudo apt-get update -y
-	sudo apt-get install -y unzip curl ca-certificates gnupg wget
+	sudo apt-get install -y unzip curl ca-certificates gnupg wget build-essential pkg-config libssl-dev
 	mkdir -p $(HOME)/.local
 	wget -q -O $(PROTOC_ZIP) "$(PROTOC_URL)"
 	unzip -o $(PROTOC_ZIP) -d $(HOME)/.local
