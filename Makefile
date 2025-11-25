@@ -11,7 +11,7 @@ PROTOC_VERSION ?= 32.0
 PROTOC_ZIP ?= protoc-$(PROTOC_VERSION)-linux-x86_64.zip
 PROTOC_URL ?= https://github.com/protocolbuffers/protobuf/releases/download/v$(PROTOC_VERSION)/$(PROTOC_ZIP)
 LOCAL_BIN ?= $(HOME)/.local/bin
-EXPORT_LINE ?= export PATH=\$$PATH:$(LOCAL_BIN)
+EXPORT_LINE ?= export PATH=$$PATH:$(LOCAL_BIN)
 
 .PHONY: all setup-env install-torch show-backend clean-protoc-zip
 
