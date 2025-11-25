@@ -54,8 +54,10 @@ install-torch:
 					printf 'cu130'; \
 				elif [ "$$major" -eq 12 ] && [ "$$minor" -ge 9 ]; then \
 					printf 'cu129'; \
+				elif [ "$$major" -eq 12 ] && [ "$$minor" -ge 8 ]; then \
+					printf 'cu128'; \
 				else \
-					printf 'cu129'; \
+					printf 'cu128'; \
 				fi; \
 			else \
 				printf 'cpu'; \

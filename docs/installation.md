@@ -8,7 +8,7 @@ Here is the process of setting up the environment, including installing core uti
 1. Make sure you have latest necessary packages.
 ```bash
     sudo apt-get update -y
-	sudo apt-get install -y unzip curl ca-certificates gnupg wget
+	sudo apt-get install -y unzip curl ca-certificates gnupg wget build-essential pkg-config libssl-dev
 ```
 
 2. Installing protoc > v30.0 can be either done via `apt install protobuf-compiler` if you have the latest update or manually: 
@@ -49,7 +49,7 @@ Make sure that you pull all submodules using `--recursive` flag.
 3. Installing PyTorch:
 You need to install the correct version of PyTroch nightly according to your hardware. On a typical Nvidia GPU such as (A100, H100), the following command should work:
 ```bash
-    uv pip install --pre torch --index-url https://download.pytorch.org/whl/nightly/cu129 --force-reinstall
+    uv pip install --pre torch --index-url https://download.pytorch.org/whl/nightly/cu128 --force-reinstall
 ```
 
 However, you might need to install cu130 for newer Nvidia GPUs, such as B200, or even the rocm backend for AMD GPUs:

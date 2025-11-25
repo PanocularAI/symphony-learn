@@ -28,6 +28,11 @@ HPC clusters vary widely in their node configurations (commonly with 4 or 8 GPUs
 * Achieve efficient cross-center resource sharing
 * Lower the computational and financial barriers to AI research
 
+## Tested platforms
+We tested and validated heterogenous training on the following platforms:
+- [x] Nvidia GPUs (L40S, A100, H100)
+- [x] AMD GPUs (MI300X)
+
 ## Getting Started
 ### Installing the framework
 First clone the repository with:

@@ -19,7 +19,7 @@ MASTER_PORT=${MASTER_PORT:-"29500"}
 NNODES=${NNODES:-"1"} # Total number of nodes within an island
 ISHOST=${ISHOST:-"true"} # Set to true for the master node, false for other nodes in the same island
 
-export GLOO_SOCKET_IFNAME=tailscale0 # Hint Gloo to use desired network interface, in this case tailscale
+export GLOO_SOCKET_IFNAME=${GLOO_SOCKET_IFNAME:-"tailscale0"} # Hint Gloo to use desired network interface, in this case tailscale
 
 PYTORCH_ALLOC_CONF="expandable_segments:True" \
 TORCHFT_LIGHTHOUSE=${TORCHFT_LIGHTHOUSE} \
@@ -27,6 +27,8 @@ MASTER_ADDR=${MASTER_ADDR} \
 MASTER_PORT=${MASTER_PORT} \
 NNODES=${NNODES} \
 ISHOST=${ISHOST} \
-torchrun --nproc_per_node=${NGPU} --nnodes 1 --rdzv_id 101 --rdzv_backend c10d --rdzv_endpoint="${MASTER_ADDR}:${MASTER_PORT}" \
---local_addr=${MASTER_ADDR} --rdzv-conf is_host=${ISHOST} --local-ranks-filter ${LOG_RANK} --role rank --tee 3 \
+torchrun --nproc_per_node=${NGPU} --nnodes ${NNODES} --rdzv_id 101 --rdzv_backend c10d --rdzv_endpoint="${MASTER_ADDR}:${MASTER_PORT}" \
+--local-ranks-filter ${LOG_RANK} --role rank --tee 3 \
 -m ${TRAIN_FILE} --job.config_file ${CONFIG_FILE} "$@"
+
+# --local_addr=${MASTER_ADDR} --rdzv-conf is_host=${ISHOST}
