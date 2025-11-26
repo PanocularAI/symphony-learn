@@ -9,7 +9,7 @@
 ![SymphonyLearn](docs/assets/symphonylearn.png)
 </div>
 
-## Overview
+## 🧭 Overview
 As AI models, especially Large Language Models (LLMs) and Vision-Language Models (VLMs), continue to grow in scale and complexity, the need for heterogeneous and decentralized training strategies is becoming increasingly critical. Training such massive models demands enormous computational resources, which are often inaccessible to most researchers and organizations.
 
 HPC centers around the world host a wide variety of GPUs, ranging across different vendors, architectures, and hardware configurations. However, these variations introduce compatibility and utilization challenges, often preventing AI researchers from seamlessly leveraging multiple HPC systems at once.
@@ -22,18 +22,25 @@ Train models across multiple hardware platforms—leveraging both PyTorch and Da
 * **Non-uniform GPU distribution:**
 HPC clusters vary widely in their node configurations (commonly with 4 or 8 GPUs per node). Our platform offers native support for varying GPU counts and node structures, allowing seamless scaling across diverse systems.
 
-## Why Use This Platform?
+## 💡 Why Use This Platform?
 * Overcome hardware heterogeneity in HPC environments
 * Enable decentralized collaboration for large-model training
 * Achieve efficient cross-center resource sharing
 * Lower the computational and financial barriers to AI research
 
-## Tested platforms
+## 🧪 Tested platforms
 We tested and validated heterogenous training on the following platforms:
 - [x] Nvidia GPUs (L40S, A100, H100)
 - [x] AMD GPUs (MI300X)
 
-## Getting Started
+## 📑 Documentations
+Besides the [Getting started](#-getting-started) section, you can find additional documentations in the [doc](docs/) folder.
+
+- [Detailed installation tutorial](docs/installation.md)
+- [Tutorial on adding a new model](docs/model.md)
+- [Deployment on Cloud using SkyPilot](docs/skypilot.md)
+
+## 🚀 Getting Started
 ### Installing the framework
 First clone the repository with:
 ```
@@ -84,7 +91,7 @@ CONFIG_FILE="./models/llama3/train_configs/debug_model.toml" \
 ./run_train.sh --fault_tolerance.enable --fault_tolerance.replica_id=1 --fault_tolerance.group_size=2
 ```
 
-## Acknowledgement
+## 🙏 Acknowledgement
 This work builds upon the following open-source frameworks:
 
 * [TorchTitan](https://github.com/meta-pytorch/torchtitan) — a PyTorch-native platform for large-scale generative AI model training (Liang et al., ICLR 2025).
