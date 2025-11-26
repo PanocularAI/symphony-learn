@@ -1,0 +1,47 @@
+# SkyPilot configuration to launch a 2-node cluster
+
+name: symphonylearn-multinode-cluster
+
+resources:
+  # accelerators: {H100:8, H200:8}
+  accelerators: {L40S:1}
+  disk_size: 1024GB
+
+num_nodes: 2
+
+workdir: .
+
+envs:
+  CONFIG_FILE: "./models/llama3/train_configs/debug_model.toml"
+  HF_TOKEN: ""
+  TORCHFT_LIGHTHOUSE: ""
+  FT_REPLICA_ID: "0"
+  FT_GROUP_SIZE: "2"
+
+setup: |
+  git clone --recursive https://github.com/PanocularAI/symphony-learn.git
+  cd symphony-learn
+  make all
+  # uv run python torchtitan/scripts/download_hf_assets.py --repo_id meta-llama/Llama-3.1-8B --assets tokenizer --hf_token=$HF_TOKEN
+
+run: |
+  pkill -f torchrun || true
+  # Get head node IP (first node in the list)
+  HEAD_NODE_IP=$(echo "$SKYPILOT_NODE_IPS" | head -n1)
+  echo "Head node IP: $HEAD_NODE_IP"
+  cd symphony-learn/
+  rm -rf outputs
+
+  echo "Starting training on node with IP: $SKYPILOT_NODE_IPS"
+  echo "$SKYPILOT_NODE_IPS" | sed -n "$((SKYPILOT_NODE_RANK + 1))p"
+
+  TORCHFT_LIGHTHOUSE=http://${TORCHFT_LIGHTHOUSE}:29510 \
+  NNODES=$SKYPILOT_NUM_NODES \
+  NGPU=$SKYPILOT_NUM_GPUS_PER_NODE \
+  CONFIG_FILE="./models/llama3/train_configs/debug_model.toml" \
+  GLOO_SOCKET_IFNAME=$SOCKET_IFNAME \
+  NCCL_SOCKET_IFNAME=$SOCKET_IFNAME \
+  MASTER_ADDR=$HEAD_NODE_IP \
+  LOCAL_ADDR=$(echo "$SKYPILOT_NODE_IPS" | sed -n "$((SKYPILOT_NODE_RANK + 1))p") \
+  ISHOST=$(if [ "$LOCAL_ADDR" = "$HEAD_NODE_IP" ]; then echo "true"; else echo "false"; fi) \
+  uv run ./run_train.sh --fault_tolerance.enable --fault_tolerance.replica_id=${FT_REPLICA_ID} --fault_tolerance.group_size=${FT_GROUP_SIZE}

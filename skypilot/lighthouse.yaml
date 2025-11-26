@@ -1,0 +1,24 @@
+# SkyPilot configuration to launch a single-node lighthouse server
+
+name: symphonylearn-multinode
+
+resources:
+  cpus: 4
+  disk_size: 20GB
+
+num_nodes: 1
+
+workdir: .
+
+setup: |
+  sudo apt install -y make
+  git clone --recursive https://github.com/PanocularAI/symphony-learn.git
+  cd symphony-learn
+  make all
+
+run: |
+  pkill -f torchft_lighthouse || true
+  HEAD_NODE_IP=$(echo "$SKYPILOT_NODE_IPS" | head -n1)
+  echo "Head node IP: $HEAD_NODE_IP"
+  cd symphony-learn/
+  RUST_BACKTRACE=1 uv run torchft_lighthouse --bind=$HEAD_NODE_IP:29510 --min_replicas 1 --quorum_tick_ms 100 --join_timeout_ms 10000
