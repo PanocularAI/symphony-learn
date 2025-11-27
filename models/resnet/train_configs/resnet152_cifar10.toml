@@ -2,6 +2,7 @@
 dump_folder = "./outputs"
 description = "ResNet-152 training"
 print_config = false
+custom_config_module = "torchtitan.components.ft.config"
 
 [profiling]
 enable_profiling = false
@@ -74,3 +75,11 @@ enable = false
 dataset = "c4_validation"
 freq = 5
 steps = 10
+
+[fault_tolerance]
+enable = true
+sync_steps = 10
+num_fragments = 1
+semi_sync_method = "diloco"
+process_group = "gloo"
+process_group_timeout_ms = 10000
