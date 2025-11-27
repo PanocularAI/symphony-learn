@@ -4,8 +4,10 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+from torchtitan.components.ft.diloco import FaultTolerantTrainSpec, fragment_llm
 from torchtitan.components.lr_scheduler import build_lr_schedulers
 from torchtitan.components.optimizer import build_optimizers
+from torchtitan.components.validate import build_validator
 from models.resnet.datasets.cifar10 import build_cifar_dataloader
 from models.resnet.model.loss import build_cross_entropy_loss
 
@@ -48,7 +50,7 @@ resnet_configs = {
 
 
 def get_train_spec() -> TrainSpec:
-    return TrainSpec(
+    return FaultTolerantTrainSpec(
         model_cls=ResNetModel,
         model_args=resnet_configs,
         parallelize_fn=parallelize_resnet,
@@ -57,5 +59,6 @@ def get_train_spec() -> TrainSpec:
         build_lr_schedulers_fn=build_lr_schedulers,
         build_dataloader_fn=build_cifar_dataloader,
         build_tokenizer_fn=None,
+        build_validator_fn=build_validator,
         build_loss_fn=build_cross_entropy_loss,
     )
