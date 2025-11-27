@@ -37,6 +37,7 @@ setup-env:
 
 	curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- -y
 	curl -LsSf https://astral.sh/uv/install.sh | sh
+	source ~/.bashrc
 	uv sync
 
 install-torch:
