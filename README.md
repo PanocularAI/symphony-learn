@@ -74,22 +74,41 @@ RUST_BACKTRACE=1 torchft_lighthouse --bind=<public_ip>:29510 --min_replicas 1 --
 2. Run the training on the first island:
 ```
 TORCHFT_LIGHTHOUSE=http://<public_ip>:29510 \
-NNODES=1 \
-ISHOST=true \
 NGPU=1 \
+LOCAL_ADDR=${LOCAL_ADDR} \
+MASTER_ADDR=${MASTER_ADDR} \
+MASTER_PORT=29500 \
+NNODES=<num_nodes> \
+ISHOST=<yes_if_master-no_if_worker> \
+GLOO_SOCKET_IFNAME=<network_card> \
+NCCL_SOCKET_IFNAME=<network_card> \
 CONFIG_FILE="./models/llama3/train_configs/debug_model.toml" \
-./run_train.sh --fault_tolerance.enable --fault_tolerance.replica_id=0 --fault_tolerance.group_size=2
+uv run ./run_train.sh --fault_tolerance.enable --fault_tolerance.replica_id=0 --fault_tolerance.group_size=2
 ```
 
 3. Run the training on the second island:
 ```
 TORCHFT_LIGHTHOUSE=http://<public_ip>:29510 \
-NNODES=1 \
-ISHOST=true \
-NGPU=1 \ 
+NGPU=1 \
+LOCAL_ADDR=<local_ip> \
+MASTER_ADDR=<master_c10d_ip> \
+MASTER_PORT=29500 \
+NNODES=<num_nodes> \
+ISHOST=<yes_if_master-no_if_worker> \
+GLOO_SOCKET_IFNAME=<network_card> \
+NCCL_SOCKET_IFNAME=<network_card> \
 CONFIG_FILE="./models/llama3/train_configs/debug_model.toml" \
-./run_train.sh --fault_tolerance.enable --fault_tolerance.replica_id=1 --fault_tolerance.group_size=2
+uv run ./run_train.sh --fault_tolerance.enable --fault_tolerance.replica_id=1 --fault_tolerance.group_size=2
 ```
+
+## 🤖 Supported models
+Currently, we validated the decentralized training of the following [models](models/):
+
+- [x] Llama3
+- [x] GPT_OSS
+- [x] Resnets
+
+New models can be simply added by following the [Adding a new model tutorial](docs/model.md).
 
 ## 🙏 Acknowledgement
 This work builds upon the following open-source frameworks:
@@ -98,3 +117,5 @@ This work builds upon the following open-source frameworks:
 * [TorchFT](https://github.com/meta-pytorch/torchft) — a library providing fault-tolerance primitives for distributed PyTorch training (HSDP, LocalSGD, DiLoCo, Streaming DiLoCo).
 
 We gratefully acknowledge the PyTorch, TorchTitan, and TorchFT teams for their foundational contributions to distributed and fault-tolerant ML training infrastructures.
+
+This project is gratefully funded by [federal ministry of breakthrough innovation (SPRIN-D)](https://www.sprind.org/en) under [Composite Learning Challenge](https://www.sprind.org/en/actions/challenges/composite-learning). 

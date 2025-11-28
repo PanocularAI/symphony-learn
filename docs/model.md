@@ -2,7 +2,7 @@
 
 This document explains, step by step, how to integrate a **new model** into the framework. We follow the style introduced by [TorchTitan](https://github.com/pytorch/torchtitan) so that it can be trained with the same scaling, logging, and checkpointing infrastructure.
 
-TorchTitan already has a well-maintained [documentation](https://github.com/pytorch/torchtitan/tree/main/docs). Please refer to that for more in-depth information.
+TorchTitan already has a clear [documentation](https://github.com/pytorch/torchtitan/blob/main/torchtitan/models/README.md). Please refer to that for more in-depth information.
 
 TorchTitan’s design goals are:
 
