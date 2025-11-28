@@ -62,7 +62,7 @@ If public IPs are not available, it is recommended to use Tailscale. Please foll
 
 ### Launch the decentralized training
 Here we explain a sample training of a llama3 model on two different islands in a decentralized way. 
-For a more detailed explanation, please refer to [Launching Training](docs/execution.md).
+For a more detailed explanation, please refer to [Launching Training](docs/distributed.md).
 
 You need to execute the following three commands in different shell sessions:
 
@@ -108,7 +108,7 @@ Currently, we validated the decentralized training of the following [models](mod
 - [x] GPT_OSS
 - [x] Resnets
 
-New models can be simply added by following the [Adding a new model tutorial](docs/model.md).
+There are many more already added in [TorchTitan models](https://github.com/pytorch/torchtitan/tree/main/torchtitan/models) and [TorchTitan experiment models](https://github.com/pytorch/torchtitan/tree/main/torchtitan/experiments). Moreover, new models can be simply added by following the [Adding a new model tutorial](docs/model.md).
 
 ## 🙏 Acknowledgement
 This work builds upon the following open-source frameworks:
