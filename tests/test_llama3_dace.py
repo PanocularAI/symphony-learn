@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Copyright 2019-2025 ETH Zurich and the DaCe authors. All rights reserved.
 
 import sys
@@ -9,11 +8,15 @@ sys.path.insert(0, str(Path(__file__).parent.parent / 'torchtitan'))
 sys.path.insert(0, str(Path(__file__).parent.parent / 'models'))
 sys.path.insert(0, str(Path(__file__).parent.parent / 'claude_workspace'))
 
+import copy
+import numpy as np
 import torch
+from torch import nn, optim
 from dace.frontend.ml.torch.module import DaceModule
 from onnx_utils import ONNXCompatibleWrapper
 from llama3_patched.model.model import Transformer
 from llama3_patched.model.args import TransformerModelArgs
+
 
 llama3_args = {
     "debugmodel": TransformerModelArgs(
@@ -21,60 +24,171 @@ llama3_args = {
     ),
 }
 
+
+def torch_tensors_close(name, torch_v, dace_v, rtol=1e-4, atol=1e-3):
+    if torch_v is None and dace_v is None:
+        return
+    if torch_v is None or dace_v is None:
+        raise AssertionError(f"{name}: one tensor is None")
+    assert torch_v.device == dace_v.device, f"{name}: tensors on different devices"
+    torch_v = torch_v.detach().cpu().numpy()
+    dace_v = dace_v.detach().cpu().numpy()
+    np.testing.assert_allclose(dace_v, torch_v, rtol=rtol, atol=atol, err_msg=f'{name} not close')
+
+
 def count_model_parameters(model):
     total_params = sum(p.numel() for p in model.parameters())
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     return total_params, trainable_params
 
-def test_llama3():
 
+def training_step(dace_model, pt_model, train_batch, sdfg_name):
+    dace_model.load_state_dict(pt_model.state_dict())
+    for dace_value, value in zip(pt_model.state_dict().values(), dace_model.state_dict().values()):
+        assert torch.allclose(dace_value, value), "State dict copy verification failed"
+
+    dace_model = DaceModule(dace_model, backward=True, simplify=True, training=True, sdfg_name=sdfg_name)
+
+    x, y = train_batch
+    train_criterion = nn.CrossEntropyLoss()
+
+    pt_output = pt_model(x)
+    pt_output_flat = pt_output.view(-1, pt_output.size(-1))
+    y_flat = y.view(-1)
+    pt_loss = train_criterion(pt_output_flat, y_flat)
+
+    dace_output = dace_model(x)
+    dace_output_flat = dace_output.view(-1, dace_output.size(-1))
+    dace_loss = train_criterion(dace_output_flat, y_flat)
+
+    print(f"PT loss: {pt_loss.item():.6f}, DaCe loss: {dace_loss.item():.6f}")
+
+    diff = abs(pt_loss.item() - dace_loss.item()) / pt_loss.item()
+    assert diff < 1e-3, f"Loss mismatch: relative difference {diff:.2e} exceeds tolerance 1e-3"
+    print(f"Loss relative diff: {diff:.2e}")
+
+    pt_loss.backward()
+    dace_loss.backward()
+
+    print("Validating gradients...")
+    grad_count = 0
+    for (name, pt_param), (dace_name, dace_param) in zip(pt_model.named_parameters(), dace_model.named_parameters()):
+        if pt_param.grad is not None:
+            torch_tensors_close(name, pt_param.grad, dace_param.grad)
+            grad_count += 1
+    print(f"Validated {grad_count} parameter gradients")
+
+    optimizer = optim.SGD(pt_model.parameters(), lr=0.001)
+    dace_optimizer = optim.SGD(dace_model.parameters(), lr=0.001)
+    optimizer.step()
+    dace_optimizer.step()
+
+    print("Validating weights after optimizer step...")
+    for (name, pt_param), (dace_name, dace_param) in zip(pt_model.named_parameters(), dace_model.named_parameters()):
+        torch_tensors_close(name, pt_param.detach(), dace_param.detach())
+    print("Weights match after optimizer step")
+
+
+def test_llama3():
     BATCH_SIZE = 1
     SEQ_LEN = 32
 
     model_args = llama3_args["debugmodel"]
     print(f"Config: vocab={model_args.vocab_size}, layers={model_args.n_layers}, dim={model_args.dim}")
 
-    model = Transformer(model_args)
-    model.init_weights()
-    model.eval()
-    wrapped_model = ONNXCompatibleWrapper(model)
+    pt_model = Transformer(model_args)
+    pt_model.init_weights()
+    pt_model = ONNXCompatibleWrapper(pt_model)
+    pt_model.train()
+
+    dace_model = Transformer(model_args)
+    dace_model.init_weights()
+    dace_model = ONNXCompatibleWrapper(dace_model)
+    dace_model.train()
 
     sample_input = torch.randint(0, model_args.vocab_size, (BATCH_SIZE, SEQ_LEN), dtype=torch.long)
-    print(f"Input shape: {sample_input.shape}")
-
-    with torch.no_grad():
-        pytorch_output = wrapped_model(sample_input.clone())
-    print(f"   Output shape: {pytorch_output.shape}")
-    print(f"   Output stats: mean={pytorch_output.mean():.4f}, std={pytorch_output.std():.4f}")
+    labels = torch.randint(0, model_args.vocab_size, (BATCH_SIZE, SEQ_LEN), dtype=torch.long)
+    print(f"Input shape: {sample_input.shape}, Labels shape: {labels.shape}")
 
     try:
-        dace_model = DaceModule(wrapped_model, sdfg_name="llama3_test")
-
-        with torch.no_grad():
-            dace_output = dace_model(sample_input.clone())
-
-
-        max_diff = torch.max(torch.abs(pytorch_output - dace_output)).item()
-        print(f"\n4. Max difference: {max_diff:.6f}")
-
-        if max_diff < 0.1:
-            print("Results match reasonably well!")
-        else:
-            print("Some numerical differences (expected with optimizations)")
-
+        training_step(dace_model, pt_model, (sample_input, labels), "llama3_test")
+        print("Training step completed successfully!")
         return True
-
     except Exception as e:
-        print(f"   ❌ Failed: {e}")
+        print(f"Failed: {e}")
         import traceback
         traceback.print_exc()
         return False
 
-if __name__ == "__main__":
-    model_args = llama3_args["debugmodel"]  
+
+def train_llama_with_dace(num_steps=10, batch_size=2, seq_len=64, lr=1e-4):
+    model_args = llama3_args["debugmodel"]
+    print(f"Config: vocab={model_args.vocab_size}, layers={model_args.n_layers}, dim={model_args.dim}")
+
     model = Transformer(model_args)
+    model.init_weights()
+    model = ONNXCompatibleWrapper(model)
+    model.train()
+
     total_params, trainable_params = count_model_parameters(model)
     print(f"Model parameters: {total_params:,} total, {trainable_params:,} trainable")
 
-    success = test_llama3()
-    sys.exit(0 if success else 1)
+    dace_model = DaceModule(model, backward=True, simplify=True, training=True, sdfg_name="llama3_train")
+
+    optimizer = optim.AdamW(dace_model.parameters(), lr=lr)
+    criterion = nn.CrossEntropyLoss()
+
+    losses = []
+    print(f"\nTraining for {num_steps} steps (batch_size={batch_size}, seq_len={seq_len}, lr={lr})")
+    print("-" * 60)
+
+    for step in range(num_steps):
+        input_ids = torch.randint(0, model_args.vocab_size, (batch_size, seq_len), dtype=torch.long)
+        labels = torch.randint(0, model_args.vocab_size, (batch_size, seq_len), dtype=torch.long)
+
+        optimizer.zero_grad()
+
+        output = dace_model(input_ids)
+        output_flat = output.view(-1, output.size(-1))
+        labels_flat = labels.view(-1)
+        loss = criterion(output_flat, labels_flat)
+
+        loss.backward()
+        optimizer.step()
+
+        losses.append(loss.item())
+        print(f"Step {step+1:3d}/{num_steps} | Loss: {loss.item():.4f}")
+
+    print("-" * 60)
+    print(f"Initial loss: {losses[0]:.4f}")
+    print(f"Final loss:   {losses[-1]:.4f}")
+    print(f"Loss change:  {losses[-1] - losses[0]:.4f}")
+
+    return losses
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--train", action="store_true", help="Run training loop")
+    parser.add_argument("--steps", type=int, default=10, help="Number of training steps")
+    parser.add_argument("--batch-size", type=int, default=2, help="Batch size")
+    parser.add_argument("--seq-len", type=int, default=64, help="Sequence length")
+    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
+    args = parser.parse_args()
+
+    if args.train:
+        train_llama_with_dace(
+            num_steps=args.steps,
+            batch_size=args.batch_size,
+            seq_len=args.seq_len,
+            lr=args.lr
+        )
+    else:
+        model_args = llama3_args["debugmodel"]
+        model = Transformer(model_args)
+        total_params, trainable_params = count_model_parameters(model)
+        print(f"Model parameters: {total_params:,} total, {trainable_params:,} trainable")
+
+        success = test_llama3()
+        sys.exit(0 if success else 1)
