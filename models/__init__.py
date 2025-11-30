@@ -1,1 +1,1 @@
-_supported_models = frozenset(["llama3", "gpt_oss", "resnet"])
+_supported_models = frozenset(["llama3", "gpt_oss", "qwen3", "resnet"])
