@@ -105,8 +105,17 @@ uv run ./run_train.sh --fault_tolerance.enable --fault_tolerance.replica_id=1 --
 Currently, we validated the decentralized training of the following [models](models/):
 
 - [x] Llama3
+- [x] Qwen3
 - [x] GPT_OSS
 - [x] Resnets
+
+Before running training, make sure to download the relevant tokenizer from HF, using:
+
+```bash
+uv run python torchtitan/scripts/download_hf_assets.py --repo_id <hf_repo_name> --assets tokenizer --hf_token=$HF_TOKEN
+```
+
+Replace `<hf_repo_name>` with the HF model path, such as `meta-llama/Llama-3.1-8B` for Llama3-8B, or `Qwen/Qwen3-0.6B` for Qwen3-0.6B. Specifying `$HF_TOKEN` and requesting access to Llama3 on HF is required for downloading Llama tokenizer.
 
 There are many more already added in [TorchTitan models](https://github.com/pytorch/torchtitan/tree/main/torchtitan/models) and [TorchTitan experiment models](https://github.com/pytorch/torchtitan/tree/main/torchtitan/experiments). Moreover, new models can be simply added by following the [Adding a new model tutorial](docs/model.md).
 
