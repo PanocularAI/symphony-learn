@@ -71,7 +71,7 @@ Note: You can also run all services for debugging purposes on a single node, by 
 
 Within the training config of each model, such as `models/llama3/train_config/debug_model.toml`, you can see the training configuration for Diloco-based training, that do not require per-step synchronization and the replica groups can synchronize weights every N steps.
 
-```bash
+```toml
 [fault_tolerance]
 enable = true
 sync_steps = 10
@@ -82,3 +82,17 @@ process_group_timeout_ms = 10000
 ```
 
 By changing `sync_steps` you can define after how many inner steps, an outer optimization will be performed among all replicas in the decentralzied training. Also, if the network is unstable, you may want to increase the `process_group_timeout_ms` to a higher value.
+
+#### Heterogeneous configurations
+We support heterogeneous configurations (i.e., different numbers of GPUs per island) by synchronizing via rank 0. Setting the flag `rank0_synchronization_only = true` in the training configuration enables support for heterogeneity. Ensure that the model is not split into fragments (i.e., set `num_fragments = 1`) when using heterogeneous configurations.
+
+```toml
+[fault_tolerance]
+enable = true
+sync_steps = 10
+num_fragments = 1
+semi_sync_method = "diloco"
+process_group = "gloo"
+process_group_timeout_ms = 10000
+rank0_synchronization_only = true
+```
