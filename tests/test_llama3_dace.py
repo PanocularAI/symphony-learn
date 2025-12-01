@@ -6,14 +6,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / 'dace'))
 sys.path.insert(0, str(Path(__file__).parent.parent / 'torchtitan'))
 sys.path.insert(0, str(Path(__file__).parent.parent / 'models'))
-sys.path.insert(0, str(Path(__file__).parent.parent / 'claude_workspace'))
 
-import copy
 import numpy as np
 import torch
 from torch import nn, optim
 from dace.frontend.ml.torch.module import DaceModule
-from onnx_utils import ONNXCompatibleWrapper
 from llama3_patched.model.model import Transformer
 from llama3_patched.model.args import TransformerModelArgs
 
@@ -23,6 +20,40 @@ llama3_args = {
         dim=256, n_layers=6, n_heads=16, vocab_size=2048, rope_theta=500000
     ),
 }
+
+
+class ONNXCompatibleRMSNorm(nn.Module):
+    def __init__(self, normalized_shape, eps=1e-5):
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(normalized_shape))
+
+    def forward(self, x):
+        variance = x.pow(2).mean(-1, keepdim=True)
+        x = x * torch.rsqrt(variance + self.eps)
+        return self.weight * x
+
+
+def replace_rms_norm(model):
+    for name, module in model.named_children():
+        if isinstance(module, nn.RMSNorm):
+            normalized_shape = module.weight.shape[0]
+            eps = module.eps
+            onnx_rms_norm = ONNXCompatibleRMSNorm(normalized_shape, eps)
+            onnx_rms_norm.weight.data = module.weight.data.clone()
+            setattr(model, name, onnx_rms_norm)
+        else:
+            replace_rms_norm(module)
+
+
+class ONNXCompatibleWrapper(nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+        replace_rms_norm(self.model)
+
+    def forward(self, input_ids):
+        return self.model(input_ids)
 
 
 def torch_tensors_close(name, torch_v, dace_v, rtol=1e-4, atol=1e-3):
