@@ -4,7 +4,6 @@
 
 
 TORCH_SPEC ?= torch
-UV_PIP_CMD ?= uv pip install
 PYTORCH_BASE_URL ?= https://download.pytorch.org/whl/nightly
 
 PROTOC_VERSION ?= 32.0
@@ -13,9 +12,13 @@ PROTOC_URL ?= https://github.com/protocolbuffers/protobuf/releases/download/v$(P
 LOCAL_BIN ?= $(HOME)/.local/bin
 EXPORT_LINE ?= export PATH=$$PATH:$(LOCAL_BIN)
 
+UV_PIP_CMD ?= $(LOCAL_BIN)/uv pip install
+
 .PHONY: all setup-env install-torch show-backend clean-protoc-zip
 
 all: setup-env install-torch install-torchtt-ft
+
+export PATH := $(HOME)/.local/bin:$(PATH)
 
 setup-env:
 	echo "Setting up environment..."
@@ -37,8 +40,7 @@ setup-env:
 
 	curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- -y
 	curl -LsSf https://astral.sh/uv/install.sh | sh
-	source ~/.bashrc
-	uv sync
+	$(LOCAL_BIN)/uv sync
 
 install-torch:
 	@backend=$$( \
