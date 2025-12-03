@@ -96,3 +96,17 @@ process_group = "gloo"
 process_group_timeout_ms = 10000
 rank0_synchronization_only = true
 ```
+
+Note: Due to a bug when using process groups with the Gloo backend on AMD GPU tensors, please set `copy_pseudogradients_to_cpu = true`. This workaround copies all pseudogradients to the CPU before the outer step.
+
+```toml
+[fault_tolerance]
+enable = true
+sync_steps = 10
+num_fragments = 1
+semi_sync_method = "diloco"
+process_group = "gloo"
+process_group_timeout_ms = 10000
+rank0_synchronization_only = false
+copy_pseudogradients_to_cpu = true
+```
