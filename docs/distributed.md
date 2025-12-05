@@ -83,6 +83,8 @@ process_group_timeout_ms = 10000
 
 By changing `sync_steps` you can define after how many inner steps, an outer optimization will be performed among all replicas in the decentralzied training. Also, if the network is unstable, you may want to increase the `process_group_timeout_ms` to a higher value.
 
+Note: If you encounter network problems or transport errors during the outer step, please set `use_pg_checkpoint_transport = true`. Setting this flag ensures that the underlying process group is responsible for the checkpoint transport.
+
 #### Heterogeneous configurations
 We support heterogeneous configurations (i.e., different numbers of GPUs per island) by synchronizing via rank 0. Setting the flag `rank0_synchronization_only = true` in the training configuration enables support for heterogeneity. Ensure that the model is not split into fragments (i.e., set `num_fragments = 1`) when using heterogeneous configurations.
 
