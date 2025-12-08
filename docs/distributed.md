@@ -41,33 +41,41 @@ RUST_BACKTRACE=1 uv run torchft_lighthouse --bind=<ip>:<port> --min_replicas 1 -
 
 NOTE: You may run lighthouse on one of the worker nodes as well. However, In a real-world scenario, it is best to host the lighthouse engine on a server which you are certain about its stability and reliablity. A cpu-only server suffice.
 
-2. Launch the first TorchTitan instance:
+2. Launch the training instances via the following command on different clusters (islands):
 
 ```bash
-TORCHFT_LIGHTHOUSE=http://10.0.0.1:29510 NGPU=8 LOCAL_ADDR=10.0.0.2 MASTER_ADDR=10.0.0.2 MASTER_PORT=29500 NNODES=1 ISHOST=yes CONFIG_FILE="./models/llama3/train_configs/llama3_8b.toml" uv run ./run_train.sh --fault_tolerance.enable --fault_tolerance.replica_id=0 --fault_tolerance.group_size=2
+TORCHFT_LIGHTHOUSE=http://10.0.0.1:29510 \
+NGPU=8 \
+LOCAL_ADDR=10.0.0.2 \
+MASTER_ADDR=10.0.0.2 \
+MASTER_PORT=29500 \
+NNODES=1 \
+ISHOST=yes \
+CONFIG_FILE="./models/llama3/train_configs/llama3_8b.toml" uv run ./run_train.sh --fault_tolerance.enable --fault_tolerance.replica_id=0 --fault_tolerance.group_size=2
 ```
 
-3. Launch the second TorchTitan instance:
+**Note:** The command above only works on Nvidia islands. For heterogenous training read the following. 
 
-```bash
-TORCHFT_LIGHTHOUSE=http://10.0.0.1:29510 NGPU=8 LOCAL_ADDR=10.0.0.3 MASTER_ADDR=10.0.0.3 MASTER_PORT=29500 NNODES=1 ISHOST=yes CONFIG_FILE="./models/llama3/train_configs/llama3_8b.toml" uv run ./run_train.sh --fault_tolerance.enable --fault_tolerance.replica_id=1 --fault_tolerance.group_size=2
-```
-
-Note: You can also run all services for debugging purposes on a single node, by just setting the right number of GPUs e.g., `NGPU=2 CUDA_VISIBLE_DEVICES=0,1`. 
+**Note:** You can also run all services for debugging purposes on a single node, by just setting the right number of GPUs e.g., `NGPU=2 CUDA_VISIBLE_DEVICES=0,1`. 
 
 ### Explanation
 
 #### Environment variables:
+* `TORCHFT_LIGHTHOUSE` is the address of the Lighthouse server.
 * `LOCAL_ADDR` is the ip/hostname of each compute node in an island.
 * `MASTER_ADDR` is the ip/hostname of the master node in the island.
 * `NNODES` is the number of nodes/island. It is NOT the number of nodes across the whole decentralized training setup.
 * `ISHOST` should be set to true on the master node in the island. On remaining nodes in the island should be set to `false`.
+* `GLOO_SOCKET_IFNAME` is the network card name for external communication. e.g., `tailscale0` for using tailscale vpn.
+* `NCCL_SOCKET_IFNAME` is the network card name for external communication. e.g., `tailscale0` for using tailscale vpn.
 
 #### Arguments:
-* `--fault_tolerance.enable` enables TorchFT functionality.
-* `--fault_tolerance.group_size=2` tells TorchTitan that there are two replica groups.
-* `--fault_tolerance.replica_id=1` tells TorchTitan that the replica ID of this instance is 1.
-* Note that the alive replica group with the smallest replica ID will perform checkpointing saving.
+* `--fault_tolerance.enable` enables TorchFT decentralized and fault-tolerance training.
+* `--fault_tolerance.group_size=2` tells TorchTitan that there are two replica groups. Specify the max number of training islands here.
+* `--fault_tolerance.replica_id=1` tells TorchTitan that the replica ID of this instance is 1. Each island should have a unique replica id. Note that the alive replica group with the smallest replica ID will perform checkpointing saving.
+* `--fault_tolerance.use_pg_checkpoint_transport = true` Setting this flag ensures that the underlying process group is responsible for the checkpoint transport. Mostly needd for heterogenous training (AMD+Nvidia).
+* `--fault_tolerance.rank0_synchronization_only = true` enables support for heterogeneity w.r.t. different number of GPUs per island.
+* `--fault_tolerance.copy_pseudogradients_to_cpu = true` copies all pseudogradients to the CPU before the outer step. 
 
 Within the training config of each model, such as `models/llama3/train_config/debug_model.toml`, you can see the training configuration for Diloco-based training, that do not require per-step synchronization and the replica groups can synchronize weights every N steps.
 
@@ -85,8 +93,8 @@ By changing `sync_steps` you can define after how many inner steps, an outer opt
 
 Note: If you encounter network problems or transport errors during the outer step, please set `use_pg_checkpoint_transport = true`. Setting this flag ensures that the underlying process group is responsible for the checkpoint transport.
 
-#### Heterogeneous configurations
-We support heterogeneous configurations (i.e., different numbers of GPUs per island) by synchronizing via rank 0. Setting the flag `rank0_synchronization_only = true` in the training configuration enables support for heterogeneity. Ensure that the model is not split into fragments (i.e., set `num_fragments = 1`) when using heterogeneous configurations.
+### Heterogeneous configurations
+We support heterogeneous configurations (i.e., different numbers of GPUs per island) by synchronizing via rank 0. Setting the flag `rank0_synchronization_only = true` in the training configuration enables support for heterogeneity. Ensure that the model is not split into fragments (i.e., set `--fault_tolerance.num_fragments = 1`) when using heterogeneous configurations.
 
 ```toml
 [fault_tolerance]
@@ -111,4 +119,5 @@ process_group = "gloo"
 process_group_timeout_ms = 10000
 rank0_synchronization_only = false
 copy_pseudogradients_to_cpu = true
+use_pg_checkpoint_transport = true
 ```

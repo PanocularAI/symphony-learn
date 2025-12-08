@@ -30,13 +30,16 @@ HPC clusters vary widely in their node configurations (commonly with 4 or 8 GPUs
 
 ## 🧪 Tested platforms
 We tested and validated heterogenous training on the following platforms:
-- [x] Nvidia GPUs (L40S, A100, H100)
+- [x] Nvidia GPUs (L40S, A100, H100, H200)
 - [x] AMD GPUs (MI300X)
+
+Training on a CPU backend is not supported as of now.
 
 ## 📑 Documentations
 Besides the [Getting started](#-getting-started) section, you can find additional documentations in the [doc](docs/) folder.
 
 - [Detailed installation tutorial](docs/installation.md)
+- [Detailed description on decentralized and heterogeneous training](docs/distributed.md)
 - [Tutorial on adding a new model](docs/model.md)
 - [Deployment on Cloud using SkyPilot](docs/skypilot.md)
 
@@ -61,8 +64,8 @@ If public IPs are not available, it is recommended to use Tailscale. Please foll
 
 
 ### Launch the decentralized training
-Here we explain a sample training of a llama3 model on two different islands in a decentralized way. 
-For a more detailed explanation, please refer to [Launching Training](docs/distributed.md).
+Here we explain a sample training of a llama3 model on two different Nvidia islands in a decentralized way. 
+For a more detailed explanation and required arguments to support fully heterogenous training (different number of gpus and vendors), please refer to [Launching Training](docs/distributed.md).
 
 You need to execute the following three commands in different shell sessions:
 
