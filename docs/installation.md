@@ -27,6 +27,8 @@ Here is the process of setting up the environment, including installing core uti
 	sudo apt-get install -y tailscale
 ```
 
+In case you do not have root permission to install tailscale, please follow the instruction [here](https://blog.papermatch.me/html/How_to_run_Tailscale_without_root).
+
 4. Installing UV package manager:
 ```bash
     curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- -y
