@@ -1,10 +1,11 @@
 [submodule "torchtitan"]
 	path = torchtitan
 	url = git@github.com:PanocularAI/torchtitan.git
+	branch = fixes_for_onnx_export
 [submodule "torchft"]
 	path = torchft
 	url = git@github.com:PanocularAI/torchft.git
 [submodule "dace"]
 	path = dace
 	url = https://github.com/spcl/dace.git
-	branch = dace_ad_matmul_perf
+	branch = dace_ad_torch_titan_fixes
