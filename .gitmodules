@@ -1,6 +1,6 @@
 [submodule "torchtitan"]
 	path = torchtitan
-	url = git@github.com:PanocularAI/hetero-torchtitan.git
+	url = git@github.com:PanocularAI/torchtitan.git
 [submodule "torchft"]
 	path = torchft
-	url = git@github.com:PanocularAI/hetero-torchft.git
+	url = git@github.com:PanocularAI/torchft.git
