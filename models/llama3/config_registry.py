@@ -33,7 +33,7 @@ def llama3_8b() -> FaultTolerantTrainer.Config:
             save_tb_folder="tb",
             enable_wandb=False,
         ),
-        model_spec=model_registry("8B", attn_backend="flex"),
+        model_spec=model_registry("8B"),
         optimizer=FTOptimizersContainer.Config(
             name="AdamW",
             lr=3e-4,

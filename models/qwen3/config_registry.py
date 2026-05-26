@@ -32,7 +32,7 @@ def qwen3_0_6b() -> FaultTolerantTrainer.Config:
             enable_tensorboard=False,
             save_tb_folder="tb",
         ),
-        model_spec=model_registry("0.6B", attn_backend="flex"),
+        model_spec=model_registry("0.6B"),
         optimizer=FTOptimizersContainer.Config(
             name="AdamW",
             lr=3e-4,
@@ -96,7 +96,7 @@ def qwen3_1_7b() -> FaultTolerantTrainer.Config:
             enable_tensorboard=False,
             save_tb_folder="tb",
         ),
-        model_spec=model_registry("1.7B", attn_backend="flex"),
+        model_spec=model_registry("1.7B"),
         optimizer=FTOptimizersContainer.Config(
             name="AdamW",
             lr=8e-4,
@@ -161,7 +161,7 @@ def qwen3_32b() -> FaultTolerantTrainer.Config:
             enable_tensorboard=False,
             save_tb_folder="tb",
         ),
-        model_spec=model_registry("32B", attn_backend="flex"),
+        model_spec=model_registry("32B"),
         optimizer=FTOptimizersContainer.Config(
             name="AdamW",
             lr=8e-4,
@@ -225,7 +225,7 @@ def qwen3_moe_debug() -> FaultTolerantTrainer.Config:
             enable_tensorboard=False,
             save_tb_folder="tb",
         ),
-        model_spec=model_registry("debugmodel_moe", attn_backend="flex"),
+        model_spec=model_registry("debugmodel_moe"),
         optimizer=FTOptimizersContainer.Config(
             name="AdamW",
             lr=3e-4,

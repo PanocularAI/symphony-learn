@@ -25,9 +25,6 @@ def parallelize_resnet(
     dump_folder: str,
     **kwargs,
 ):
-    # cuDNN sublibrary version mismatch on this machine — fall back to non-cuDNN conv
-    torch.backends.cudnn.enabled = False
-
     if parallel_dims.fsdp_enabled:
         names = ["dp_replicate", "fsdp"] if parallel_dims.dp_replicate_enabled else ["fsdp"]
         dp_mesh = parallel_dims.get_mesh(names)
