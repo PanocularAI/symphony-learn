@@ -8,8 +8,9 @@ set -ex
 
 NGPU=${NGPU:-"8"}
 export LOG_RANK=${LOG_RANK:-0}
-CONFIG_FILE=${CONFIG_FILE:-"./torchtitan/models/llama3/train_configs/debug_model.toml"}
-TRAIN_FILE=${TRAIN_FILE:-"train"}
+MODULE=${MODULE:-"ft.llama3"} # Python module containing config_registry.py (e.g. models.qwen3)
+CONFIG_NAME=${CONFIG_NAME:-"llama3_ft_debugmodel"} # function name in config_registry.py to call for the run config
+TRAIN_FILE=${TRAIN_FILE:-"torchtitan.train"} # entry point module passed to torchrun -m; points directly to torchtitan's trainer
 
 TORCHFT_LIGHTHOUSE=${TORCHFT_LIGHTHOUSE:-"http://localhost:29510"}
 
@@ -34,4 +35,4 @@ NNODES=${NNODES} \
 ISHOST=${ISHOST} \
 torchrun --nproc_per_node=${NGPU} --nnodes ${NNODES} --rdzv_id 101 --rdzv_backend c10d --rdzv_endpoint="${MASTER_ADDR}:${MASTER_PORT}" \
 --local_addr=${LOCAL_ADDR} --rdzv-conf is_host=${ISHOST} --local-ranks-filter ${LOG_RANK} --role rank --tee 3 \
--m ${TRAIN_FILE} --job.config_file ${CONFIG_FILE} "$@"
+-m ${TRAIN_FILE} --module ${MODULE} --config ${CONFIG_NAME} "$@"

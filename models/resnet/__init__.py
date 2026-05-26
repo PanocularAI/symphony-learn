@@ -4,14 +4,8 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from torchtitan.components.ft.diloco import FaultTolerantTrainSpec, fragment_llm
-from torchtitan.components.lr_scheduler import build_lr_schedulers
-from torchtitan.components.optimizer import build_optimizers
-from torchtitan.components.validate import build_validator
-from models.resnet.datasets.cifar10 import build_cifar_dataloader
 from models.resnet.model.loss import build_cross_entropy_loss
-
-from torchtitan.protocols.train_spec import TrainSpec
+from torchtitan.protocols.model_spec import FaultTolerantModelSpec
 
 from .infra.parallelize import parallelize_resnet
 from .model.args import ResNetModelArgs
@@ -49,16 +43,15 @@ resnet_configs = {
 }
 
 
-def get_train_spec() -> TrainSpec:
-    return FaultTolerantTrainSpec(
-        model_cls=ResNetModel,
-        model_args=resnet_configs,
+def model_registry(flavor: str) -> FaultTolerantModelSpec:
+    return FaultTolerantModelSpec(
+        name="ft/resnet",
+        flavor=flavor,
+        model=resnet_configs[flavor],
         parallelize_fn=parallelize_resnet,
         pipelining_fn=None,
-        build_optimizers_fn=build_optimizers,
-        build_lr_schedulers_fn=build_lr_schedulers,
-        build_dataloader_fn=build_cifar_dataloader,
-        build_tokenizer_fn=None,
-        build_validator_fn=build_validator,
         build_loss_fn=build_cross_entropy_loss,
+        post_optimizer_build_fn=None,
+        state_dict_adapter=None,
+        fragment_fn=None,
     )

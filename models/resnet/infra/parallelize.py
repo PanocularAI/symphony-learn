@@ -6,7 +6,8 @@ import torch.nn as nn
 from torch.distributed._composable.replicate import replicate
 
 from torch.distributed.device_mesh import DeviceMesh
-from torchtitan.config import JobConfig, TORCH_DTYPE_MAP
+from torchtitan.config import TORCH_DTYPE_MAP
+from torchtitan.config.configs import ActivationCheckpointConfig, CompileConfig, ParallelismConfig, TrainingConfig
 from torch.distributed.fsdp import CPUOffloadPolicy, fully_shard, MixedPrecisionPolicy
 from torch.distributed.tensor import Replicate, Shard
 from torchtitan.distributed import ParallelDims
@@ -15,26 +16,30 @@ from torchtitan.tools.logging import logger
 
 def parallelize_resnet(
     model: nn.Module,
+    *,
     parallel_dims: ParallelDims,
-    job_config: JobConfig,
+    training: TrainingConfig,
+    parallelism: ParallelismConfig,
+    compile_config: CompileConfig,
+    ac_config: ActivationCheckpointConfig,
+    dump_folder: str,
+    **kwargs,
 ):
-    world_mesh = parallel_dims.world_mesh
+    # cuDNN sublibrary version mismatch on this machine — fall back to non-cuDNN conv
+    torch.backends.cudnn.enabled = False
 
     if parallel_dims.fsdp_enabled:
-        # apply FSDP or HSDP, potentially with Context Parallel
-        if parallel_dims.dp_replicate_enabled:
-            dp_mesh_dim_names = ("dp_replicate", "dp_shard_cp")
-        else:
-            dp_mesh_dim_names = ("dp_shard_cp",)
+        names = ["dp_replicate", "fsdp"] if parallel_dims.dp_replicate_enabled else ["fsdp"]
+        dp_mesh = parallel_dims.get_mesh(names)
 
         apply_fsdp(
             model,
-            world_mesh[tuple(dp_mesh_dim_names)],
-            param_dtype=TORCH_DTYPE_MAP[job_config.training.mixed_precision_param],
-            reduce_dtype=TORCH_DTYPE_MAP[job_config.training.mixed_precision_reduce],
+            dp_mesh,
+            param_dtype=TORCH_DTYPE_MAP[training.mixed_precision_param],
+            reduce_dtype=TORCH_DTYPE_MAP[training.mixed_precision_reduce],
             pp_enabled=parallel_dims.pp_enabled,
-            cpu_offload=job_config.training.enable_cpu_offload,
-            reshard_after_forward_policy=job_config.parallelism.fsdp_reshard_after_forward,
+            cpu_offload=training.enable_cpu_offload,
+            reshard_after_forward_policy=parallelism.fsdp_reshard_after_forward,
         )
 
         if parallel_dims.dp_replicate_enabled:
@@ -45,14 +50,13 @@ def parallelize_resnet(
         if parallel_dims.cp_enabled:
             logger.info("Applied Context Parallel to the model")
 
-        if job_config.training.enable_cpu_offload:
+        if training.enable_cpu_offload:
             logger.info("Applied CPU Offloading to the model")
     elif parallel_dims.dp_replicate_enabled:
-        if world_mesh.ndim > 1:
-            raise RuntimeError("DDP has not supported > 1D parallelism")
+        dp_mesh = parallel_dims.get_mesh(["dp_replicate"])
         apply_ddp(
             model,
-            world_mesh,
+            dp_mesh,
             enable_compile=False,
         )
 
