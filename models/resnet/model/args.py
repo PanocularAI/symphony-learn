@@ -10,7 +10,7 @@ import dataclasses
 @dataclass
 class ResNetModelArgs:
     """
-    Configuration for building a ResNet backbone.
+    Configuration for building a ResNet-50 backbone.
     """
     num_classes: int = 10
     n_layers: int = 4  # number of layers to include (max 4)

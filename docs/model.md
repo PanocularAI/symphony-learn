@@ -22,7 +22,7 @@ The easiest way to add a model is to **mirror the structure** of the existing Ll
    - `torchtitan/models/llama3/model/args.py` — Model arguments
    - `torchtitan/models/llama3/model/state_dict_adapter.py` — Helper functions for converting to/from HF model format.
    - `torchtitan/models/llama3/infra/parallelize.py` — how Data/Tensor/Context Parallel, activation checkpointing, and `torch.compile` are applied
-   - `models/llama3/config_registry.py` — Python functions returning a `FaultTolerantTrainer.Config`; each function is a named run preset selected via `--config <function_name>`
+   - `torchtitan/models/llama3/config_registry.py` — Python functions returning a `FaultTolerantTrainer.Config`; each function is a named run preset selected via `--config <function_name>`
 
    Your new model should "plug into" the same infrastructure patterns.
 

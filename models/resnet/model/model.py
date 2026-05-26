@@ -143,8 +143,6 @@ class ResNetModel(nn.Module):
         self.init_weights(buffer_device=buffer_device)
 
     def verify_module_protocol(self) -> None:
-        # ResNet uses standard PyTorch modules (Conv2d, BatchNorm2d) which do not
-        # conform to torchtitan's Module protocol — skip verification.
         pass
 
     def forward(
