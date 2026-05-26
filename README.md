@@ -85,7 +85,8 @@ NNODES=<num_nodes> \
 ISHOST=<yes_if_master-no_if_worker> \
 GLOO_SOCKET_IFNAME=<network_card> \
 NCCL_SOCKET_IFNAME=<network_card> \
-CONFIG_FILE="./models/llama3/train_configs/debug_model.toml" \
+MODULE="models.llama3" \
+CONFIG_NAME="llama3_debugmodel" \
 uv run ./run_train.sh --fault_tolerance.enable --fault_tolerance.replica_id=0 --fault_tolerance.group_size=2
 ```
 
@@ -100,7 +101,8 @@ NNODES=<num_nodes> \
 ISHOST=<yes_if_master-no_if_worker> \
 GLOO_SOCKET_IFNAME=<network_card> \
 NCCL_SOCKET_IFNAME=<network_card> \
-CONFIG_FILE="./models/llama3/train_configs/debug_model.toml" \
+MODULE="models.llama3" \
+CONFIG_NAME="llama3_debugmodel" \
 uv run ./run_train.sh --fault_tolerance.enable --fault_tolerance.replica_id=1 --fault_tolerance.group_size=2
 ```
 
