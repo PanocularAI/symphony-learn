@@ -20,7 +20,7 @@ from . import model_registry
 
 def llama3_8b() -> FaultTolerantTrainer.Config:
     return FaultTolerantTrainer.Config(
-        hf_assets_path="/srv/panocular_checkpoints/panolm_llamatokenzier",
+        hf_assets_path="./assets/hf/Llama-3.1-8B",
         dump_folder="./outputs",
         profiler=Profiler.Config(
             enable_profiling=True,
