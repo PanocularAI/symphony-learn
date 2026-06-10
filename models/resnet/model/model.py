@@ -1,6 +1,5 @@
 import torch
 from torch import nn
-from torchtitan.protocols.train_spec import ModelProtocol
 
 from .args import ResNetModelArgs
 
@@ -66,7 +65,7 @@ class BottleNeckBlock(nn.Module):
         return out
 
 
-class ResNetModel(nn.Module, ModelProtocol):
+class ResNetModel(nn.Module):
     def __init__(self, model_args: ResNetModelArgs):
         super().__init__()
 
@@ -139,6 +138,12 @@ class ResNetModel(nn.Module, ModelProtocol):
 
                 if isinstance(final_bn, nn.BatchNorm2d) and final_bn.affine:
                     nn.init.zeros_(final_bn.weight)
+
+    def init_states(self, *, buffer_device=None) -> None:
+        self.init_weights(buffer_device=buffer_device)
+
+    def verify_module_protocol(self) -> None:
+        pass
 
     def forward(
         self,

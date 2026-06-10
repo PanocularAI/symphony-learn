@@ -4,8 +4,7 @@ from typing import Literal, Optional
 import math
 from torch import nn
 
-from torchtitan.config import JobConfig
-from torchtitan.tools.logging import logger
+import dataclasses
 
 
 @dataclass
@@ -18,9 +17,16 @@ class ResNetModelArgs:
     block: Literal["ResidualBlock", "BottleNeckBlock"] = "ResidualBlock"
     layers: Optional[list[int]] = None  # number of blocks in each layer
 
-    def update_from_config(self, job_config: JobConfig, **kwargs) -> None:
+    def update_from_config(self, **kwargs) -> None:
         pass
-        
+
+    def build(self):
+        from models.resnet.model.model import ResNetModel
+        return ResNetModel(self)
+
+    def to_dict(self) -> dict:
+        return dataclasses.asdict(self)
+
     def get_nparams_and_flops(
         self, model: nn.Module, seq_len: int
     ) -> tuple[int, float]:

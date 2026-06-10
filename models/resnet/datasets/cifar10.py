@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 
+from dataclasses import dataclass
 from datasets import Dataset, load_dataset
 from datasets.distributed import split_dataset_by_node
 
@@ -8,7 +9,6 @@ from torch.distributed.checkpoint.stateful import Stateful
 from torch.utils.data import IterableDataset
 
 from torchtitan.components.dataloader import ParallelAwareDataloader
-from torchtitan.config import JobConfig
 from torchtitan.tools.logging import logger
 
 
@@ -64,27 +64,36 @@ class HuggingFaceImageDataset(IterableDataset, Stateful):
                         self._data.set_epoch(self._data.epoch + 1)
 
 
-def build_cifar_dataloader(
-    dp_world_size: int,
-    dp_rank: int,
-    tokenizer,
-    job_config: JobConfig,
-    infinite: bool = True,
-) -> ParallelAwareDataloader:
-    batch_size = job_config.training.local_batch_size
+class CifarDataLoader(ParallelAwareDataloader):
+    """Configurable image dataloader for CIFAR-10 using HuggingFace datasets."""
 
-    dataset = HuggingFaceImageDataset(
-        dataset_name = job_config.training.dataset,
-        dp_rank=dp_rank,
-        dp_world_size=dp_world_size,
-        infinite=infinite,
-    )
+    @dataclass(kw_only=True, slots=True)
+    class Config(ParallelAwareDataloader.Config):
+        dataset: str = "uoft-cs/cifar10"
+        infinite: bool = True
 
-    base_dataloader = ParallelAwareDataloader(
-        dataset=dataset,
-        dp_rank=dp_rank,
-        dp_world_size=dp_world_size,
-        batch_size=batch_size,
-    )
+    def __init__(
+        self,
+        config: "CifarDataLoader.Config",
+        *,
+        dp_world_size: int,
+        dp_rank: int,
+        tokenizer=None,
+        seq_len: int = 0,
+        local_batch_size: int,
+        **kwargs,
+    ):
+        dataset = HuggingFaceImageDataset(
+            dataset_name=config.dataset,
+            dp_rank=dp_rank,
+            dp_world_size=dp_world_size,
+            infinite=config.infinite,
+        )
+        super().__init__(
+            dataset,
+            dp_rank=dp_rank,
+            dp_world_size=dp_world_size,
+            batch_size=local_batch_size,
+        )
 
-    return base_dataloader
+

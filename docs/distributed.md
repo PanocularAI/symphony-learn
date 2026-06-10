@@ -51,7 +51,9 @@ MASTER_ADDR=10.0.0.2 \
 MASTER_PORT=29500 \
 NNODES=1 \
 ISHOST=yes \
-CONFIG_FILE="./models/llama3/train_configs/llama3_8b.toml" uv run ./run_train.sh --fault_tolerance.enable --fault_tolerance.replica_id=0 --fault_tolerance.group_size=2
+MODULE="models.llama3" \
+CONFIG_NAME="llama3_8b" \
+uv run ./run_train.sh --fault_tolerance.enable --fault_tolerance.replica_id=0 --fault_tolerance.group_size=2
 ```
 
 **Note:** The command above only works on Nvidia islands. For heterogenous training read the following. 
@@ -77,47 +79,50 @@ CONFIG_FILE="./models/llama3/train_configs/llama3_8b.toml" uv run ./run_train.sh
 * `--fault_tolerance.rank0_synchronization_only = true` enables support for heterogeneity w.r.t. different number of GPUs per island.
 * `--fault_tolerance.copy_pseudogradients_to_cpu = true` copies all pseudogradients to the CPU before the outer step. 
 
-Within the training config of each model, such as `models/llama3/train_config/debug_model.toml`, you can see the training configuration for Diloco-based training, that do not require per-step synchronization and the replica groups can synchronize weights every N steps.
+Within the training config of each model, such as `models/llama3/config_registry.py`, you can see the training configuration for Diloco-based training, that do not require per-step synchronization and the replica groups can synchronize weights every N steps.
 
-```toml
-[fault_tolerance]
-enable = true
-sync_steps = 10
-num_fragments = 2
-semi_sync_method = "diloco"
-process_group = "gloo"
-process_group_timeout_ms = 10000
+```python
+fault_tolerance=FaultTolerance(
+    enable=True,
+    sync_steps=10,
+    num_fragments=2,
+    semi_sync_method="diloco",
+    process_group="gloo",
+    process_group_timeout_ms=10000,
+),
 ```
 
-By changing `sync_steps` you can define after how many inner steps, an outer optimization will be performed among all replicas in the decentralzied training. Also, if the network is unstable, you may want to increase the `process_group_timeout_ms` to a higher value.
+By changing `sync_steps` you can define after how many inner steps, an outer optimization will be performed among all replicas in the decentralized training. Also, if the network is unstable, you may want to increase the `process_group_timeout_ms` to a higher value.
 
 Note: If you encounter network problems or transport errors during the outer step, please set `use_pg_checkpoint_transport = true`. Setting this flag ensures that the underlying process group is responsible for the checkpoint transport.
 
 ### Heterogeneous configurations
-We support heterogeneous configurations (i.e., different numbers of GPUs per island) by synchronizing via rank 0. Setting the flag `rank0_synchronization_only = true` in the training configuration enables support for heterogeneity. Ensure that the model is not split into fragments (i.e., set `--fault_tolerance.num_fragments = 1`) when using heterogeneous configurations.
+We support heterogeneous configurations (i.e., different numbers of GPUs per island) by synchronizing via rank 0. Setting `rank0_synchronization_only=True` in the `FaultTolerance` config enables this. Ensure that the model is not split into fragments (i.e., `num_fragments=1`) when using heterogeneous configurations.
 
-```toml
-[fault_tolerance]
-enable = true
-sync_steps = 10
-num_fragments = 1
-semi_sync_method = "diloco"
-process_group = "gloo"
-process_group_timeout_ms = 10000
-rank0_synchronization_only = true
+```python
+fault_tolerance=FaultTolerance(
+    enable=True,
+    sync_steps=10,
+    num_fragments=1,
+    semi_sync_method="diloco",
+    process_group="gloo",
+    process_group_timeout_ms=10000,
+    rank0_synchronization_only=True,
+),
 ```
 
-Note: Due to a bug when using process groups with the Gloo backend on AMD GPU tensors, please set `copy_pseudogradients_to_cpu = true`. This workaround copies all pseudogradients to the CPU before the outer step.
+Note: Due to a bug when using process groups with the Gloo backend on AMD GPU tensors, please set `copy_pseudogradients_to_cpu=True`. This workaround copies all pseudogradients to the CPU before the outer step.
 
-```toml
-[fault_tolerance]
-enable = true
-sync_steps = 10
-num_fragments = 1
-semi_sync_method = "diloco"
-process_group = "gloo"
-process_group_timeout_ms = 10000
-rank0_synchronization_only = false
-copy_pseudogradients_to_cpu = true
-use_pg_checkpoint_transport = true
+```python
+fault_tolerance=FaultTolerance(
+    enable=True,
+    sync_steps=10,
+    num_fragments=1,
+    semi_sync_method="diloco",
+    process_group="gloo",
+    process_group_timeout_ms=10000,
+    rank0_synchronization_only=False,
+    copy_pseudogradients_to_cpu=True,
+    use_pg_checkpoint_transport=True,
+),
 ```

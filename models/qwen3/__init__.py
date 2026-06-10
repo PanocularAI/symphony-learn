@@ -3,35 +3,35 @@
 #
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
-#
-# Copyright (c) Meta Platforms, Inc. All Rights Reserved.
 
 from torchtitan.components.loss import build_cross_entropy_loss
-from torchtitan.components.lr_scheduler import build_lr_schedulers
-from torchtitan.components.optimizer import build_optimizers
-from torchtitan.components.tokenizer import build_hf_tokenizer
-from torchtitan.components.validate import build_validator
-from torchtitan.hf_datasets.text_datasets import build_text_dataloader
-from torchtitan.protocols.train_spec import TrainSpec
-
-from torchtitan.models.qwen3.infra.parallelize import parallelize_qwen3
-from torchtitan.models.qwen3.model.model import Qwen3Model
-from torchtitan.models.qwen3.model.state_dict_adapter import Qwen3StateDictAdapter
-
-from torchtitan.models.qwen3 import qwen3_args
+from torchtitan.experiments.ft.diloco import fragment_llm
+from torchtitan.models.qwen3 import (
+    Qwen3StateDictAdapter,
+    parallelize_qwen3,
+    pipeline_llm,
+    qwen3_configs,
+)
+from torchtitan.protocols.model_spec import FaultTolerantModelSpec
 
 
-def get_train_spec() -> TrainSpec:
-    return TrainSpec(
-        model_cls=Qwen3Model,
-        model_args=qwen3_args,  # Change from dict to Mapping
+def model_registry(
+    flavor: str,
+    attn_backend: str = "sdpa",
+    moe_comm_backend: str | None = None,
+) -> FaultTolerantModelSpec:
+    kwargs = dict(attn_backend=attn_backend)
+    if moe_comm_backend is not None:
+        kwargs["moe_comm_backend"] = moe_comm_backend
+    config = qwen3_configs[flavor](**kwargs)
+    return FaultTolerantModelSpec(
+        name="ft/qwen3",
+        flavor=flavor,
+        model=config,
         parallelize_fn=parallelize_qwen3,
-        pipelining_fn=None,
-        build_optimizers_fn=build_optimizers,
-        build_lr_schedulers_fn=build_lr_schedulers,
-        build_dataloader_fn=build_text_dataloader,
-        build_tokenizer_fn=build_hf_tokenizer,
+        pipelining_fn=pipeline_llm,
         build_loss_fn=build_cross_entropy_loss,
-        build_validator_fn=build_validator,
+        post_optimizer_build_fn=None,
         state_dict_adapter=Qwen3StateDictAdapter,
+        fragment_fn=fragment_llm,
     )
