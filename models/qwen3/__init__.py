@@ -4,20 +4,19 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from torchtitan.components.loss import build_cross_entropy_loss
-from torchtitan.experiments.ft.diloco import fragment_llm
+from torchtitan.experiments.torchft.config.job_config import FaultTolerantModelSpec
+from torchtitan.experiments.torchft.diloco import fragment_llm
 from torchtitan.models.qwen3 import (
     Qwen3StateDictAdapter,
     parallelize_qwen3,
     pipeline_llm,
     qwen3_configs,
 )
-from torchtitan.protocols.model_spec import FaultTolerantModelSpec
 
 
 def model_registry(
     flavor: str,
-    attn_backend: str = "sdpa",
+    attn_backend: str = "flex",
     moe_comm_backend: str | None = None,
 ) -> FaultTolerantModelSpec:
     kwargs = dict(attn_backend=attn_backend)
@@ -30,7 +29,6 @@ def model_registry(
         model=config,
         parallelize_fn=parallelize_qwen3,
         pipelining_fn=pipeline_llm,
-        build_loss_fn=build_cross_entropy_loss,
         post_optimizer_build_fn=None,
         state_dict_adapter=Qwen3StateDictAdapter,
         fragment_fn=fragment_llm,

@@ -8,19 +8,21 @@ from torchtitan.components.lr_scheduler import LRSchedulersContainer
 from torchtitan.components.metrics import MetricsProcessor
 from torchtitan.components.validate import Validator
 from torchtitan.config import ActivationCheckpointConfig, ParallelismConfig, TrainingConfig
-from torchtitan.experiments.ft.checkpoint import FTCheckpointManager
-from torchtitan.experiments.ft.config.job_config import FaultTolerance
-from torchtitan.experiments.ft.optimizer import FTOptimizersContainer
-from torchtitan.experiments.ft.trainer import FaultTolerantTrainer
+from torchtitan.experiments.torchft.checkpoint import TorchFTCheckpointManager
+from torchtitan.experiments.torchft.config.job_config import FaultTolerance
+from torchtitan.experiments.torchft.optimizer import default_ft_adamw
+from torchtitan.experiments.torchft.trainer import FaultTolerantTrainer
 from torchtitan.tools.profiler import Profiler
 
 from models.resnet.datasets.cifar10 import CifarDataLoader
+from models.resnet.model.loss import ResNetCrossEntropyLoss
 
 from . import model_registry
 
 
 def resnet18_cifar10() -> FaultTolerantTrainer.Config:
     return FaultTolerantTrainer.Config(
+        loss=ResNetCrossEntropyLoss.Config(),
         hf_assets_path="",
         tokenizer=None,
         dump_folder="./outputs",
@@ -36,11 +38,7 @@ def resnet18_cifar10() -> FaultTolerantTrainer.Config:
             enable_wandb=False,
         ),
         model_spec=model_registry("18"),
-        optimizer=FTOptimizersContainer.Config(
-            name="AdamW",
-            lr=0.01,
-            eps=1e-8,
-        ),
+        optimizer=default_ft_adamw(lr=0.01),
         lr_scheduler=LRSchedulersContainer.Config(
             warmup_steps=2,
             decay_ratio=0.8,
@@ -63,7 +61,7 @@ def resnet18_cifar10() -> FaultTolerantTrainer.Config:
             pipeline_parallel_degree=1,
             context_parallel_degree=1,
         ),
-        checkpoint=FTCheckpointManager.Config(
+        checkpoint=TorchFTCheckpointManager.Config(
             enable=False,
             enable_ft_dataloader_checkpoints=False,
             folder="checkpoint",
@@ -92,6 +90,7 @@ def resnet18_cifar10() -> FaultTolerantTrainer.Config:
 
 def resnet34_cifar10() -> FaultTolerantTrainer.Config:
     return FaultTolerantTrainer.Config(
+        loss=ResNetCrossEntropyLoss.Config(),
         hf_assets_path="",
         tokenizer=None,
         dump_folder="./outputs",
@@ -107,11 +106,7 @@ def resnet34_cifar10() -> FaultTolerantTrainer.Config:
             enable_wandb=False,
         ),
         model_spec=model_registry("34"),
-        optimizer=FTOptimizersContainer.Config(
-            name="AdamW",
-            lr=0.01,
-            eps=1e-8,
-        ),
+        optimizer=default_ft_adamw(lr=0.01),
         lr_scheduler=LRSchedulersContainer.Config(
             warmup_steps=2,
             decay_ratio=0.8,
@@ -134,7 +129,7 @@ def resnet34_cifar10() -> FaultTolerantTrainer.Config:
             pipeline_parallel_degree=1,
             context_parallel_degree=1,
         ),
-        checkpoint=FTCheckpointManager.Config(
+        checkpoint=TorchFTCheckpointManager.Config(
             enable=False,
             enable_ft_dataloader_checkpoints=False,
             folder="checkpoint",
@@ -163,6 +158,7 @@ def resnet34_cifar10() -> FaultTolerantTrainer.Config:
 
 def resnet50_cifar10() -> FaultTolerantTrainer.Config:
     return FaultTolerantTrainer.Config(
+        loss=ResNetCrossEntropyLoss.Config(),
         hf_assets_path="",
         tokenizer=None,
         dump_folder="./outputs",
@@ -178,11 +174,7 @@ def resnet50_cifar10() -> FaultTolerantTrainer.Config:
             enable_wandb=False,
         ),
         model_spec=model_registry("50"),
-        optimizer=FTOptimizersContainer.Config(
-            name="AdamW",
-            lr=0.01,
-            eps=1e-8,
-        ),
+        optimizer=default_ft_adamw(lr=0.01),
         lr_scheduler=LRSchedulersContainer.Config(
             warmup_steps=2,
             decay_ratio=0.8,
@@ -205,7 +197,7 @@ def resnet50_cifar10() -> FaultTolerantTrainer.Config:
             pipeline_parallel_degree=1,
             context_parallel_degree=1,
         ),
-        checkpoint=FTCheckpointManager.Config(
+        checkpoint=TorchFTCheckpointManager.Config(
             enable=False,
             enable_ft_dataloader_checkpoints=False,
             folder="checkpoint",
@@ -234,6 +226,7 @@ def resnet50_cifar10() -> FaultTolerantTrainer.Config:
 
 def resnet152_cifar10() -> FaultTolerantTrainer.Config:
     return FaultTolerantTrainer.Config(
+        loss=ResNetCrossEntropyLoss.Config(),
         hf_assets_path="",
         tokenizer=None,
         dump_folder="./outputs",
@@ -249,11 +242,7 @@ def resnet152_cifar10() -> FaultTolerantTrainer.Config:
             enable_wandb=False,
         ),
         model_spec=model_registry("152"),
-        optimizer=FTOptimizersContainer.Config(
-            name="AdamW",
-            lr=0.01,
-            eps=1e-8,
-        ),
+        optimizer=default_ft_adamw(lr=0.01),
         lr_scheduler=LRSchedulersContainer.Config(
             warmup_steps=2,
             decay_ratio=0.8,
@@ -276,7 +265,7 @@ def resnet152_cifar10() -> FaultTolerantTrainer.Config:
             pipeline_parallel_degree=1,
             context_parallel_degree=1,
         ),
-        checkpoint=FTCheckpointManager.Config(
+        checkpoint=TorchFTCheckpointManager.Config(
             enable=False,
             enable_ft_dataloader_checkpoints=False,
             folder="checkpoint",

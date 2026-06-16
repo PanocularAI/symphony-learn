@@ -4,14 +4,15 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+from torchtitan.components.loss import CrossEntropyLoss
 from torchtitan.components.lr_scheduler import LRSchedulersContainer
 from torchtitan.components.metrics import MetricsProcessor
 from torchtitan.components.validate import Validator
 from torchtitan.config import ActivationCheckpointConfig, ParallelismConfig, TrainingConfig
-from torchtitan.experiments.ft.checkpoint import FTCheckpointManager
-from torchtitan.experiments.ft.config.job_config import FaultTolerance
-from torchtitan.experiments.ft.optimizer import FTOptimizersContainer
-from torchtitan.experiments.ft.trainer import FaultTolerantTrainer
+from torchtitan.experiments.torchft.checkpoint import TorchFTCheckpointManager
+from torchtitan.experiments.torchft.config.job_config import FaultTolerance
+from torchtitan.experiments.torchft.optimizer import default_ft_adamw
+from torchtitan.experiments.torchft.trainer import FaultTolerantTrainer
 from torchtitan.hf_datasets.text_datasets import HuggingFaceTextDataLoader
 from torchtitan.tools.profiler import Profiler
 
@@ -20,6 +21,7 @@ from . import model_registry
 
 def qwen3_0_6b() -> FaultTolerantTrainer.Config:
     return FaultTolerantTrainer.Config(
+        loss=CrossEntropyLoss.Config(),
         hf_assets_path="./assets/hf/Qwen3-0.6B",
         dump_folder="./outputs",
         profiler=Profiler.Config(
@@ -33,11 +35,7 @@ def qwen3_0_6b() -> FaultTolerantTrainer.Config:
             save_tb_folder="tb",
         ),
         model_spec=model_registry("0.6B"),
-        optimizer=FTOptimizersContainer.Config(
-            name="AdamW",
-            lr=3e-4,
-            eps=1e-8,
-        ),
+        optimizer=default_ft_adamw(lr=3e-4),
         lr_scheduler=LRSchedulersContainer.Config(
             warmup_steps=2,
         ),
@@ -57,7 +55,7 @@ def qwen3_0_6b() -> FaultTolerantTrainer.Config:
             pipeline_parallel_degree=1,
             context_parallel_degree=1,
         ),
-        checkpoint=FTCheckpointManager.Config(
+        checkpoint=TorchFTCheckpointManager.Config(
             enable=False,
             enable_ft_dataloader_checkpoints=False,
             folder="checkpoint",
@@ -84,6 +82,7 @@ def qwen3_0_6b() -> FaultTolerantTrainer.Config:
 
 def qwen3_1_7b() -> FaultTolerantTrainer.Config:
     return FaultTolerantTrainer.Config(
+        loss=CrossEntropyLoss.Config(),
         hf_assets_path="./assets/hf/Qwen3-1.7B",
         dump_folder="./outputs",
         profiler=Profiler.Config(
@@ -97,11 +96,7 @@ def qwen3_1_7b() -> FaultTolerantTrainer.Config:
             save_tb_folder="tb",
         ),
         model_spec=model_registry("1.7B"),
-        optimizer=FTOptimizersContainer.Config(
-            name="AdamW",
-            lr=8e-4,
-            eps=1e-8,
-        ),
+        optimizer=default_ft_adamw(lr=8e-4),
         lr_scheduler=LRSchedulersContainer.Config(
             warmup_steps=20,
         ),
@@ -121,7 +116,7 @@ def qwen3_1_7b() -> FaultTolerantTrainer.Config:
             pipeline_parallel_degree=1,
             context_parallel_degree=1,
         ),
-        checkpoint=FTCheckpointManager.Config(
+        checkpoint=TorchFTCheckpointManager.Config(
             enable=False,
             enable_ft_dataloader_checkpoints=False,
             folder="checkpoint",
@@ -149,6 +144,7 @@ def qwen3_1_7b() -> FaultTolerantTrainer.Config:
 def qwen3_32b() -> FaultTolerantTrainer.Config:
     # Preset for 8 H100 GPUs with 96 GiB memory
     return FaultTolerantTrainer.Config(
+        loss=CrossEntropyLoss.Config(),
         hf_assets_path="./assets/hf/Qwen3-32B",
         dump_folder="./outputs",
         profiler=Profiler.Config(
@@ -162,11 +158,7 @@ def qwen3_32b() -> FaultTolerantTrainer.Config:
             save_tb_folder="tb",
         ),
         model_spec=model_registry("32B"),
-        optimizer=FTOptimizersContainer.Config(
-            name="AdamW",
-            lr=8e-4,
-            eps=1e-8,
-        ),
+        optimizer=default_ft_adamw(lr=8e-4),
         lr_scheduler=LRSchedulersContainer.Config(
             warmup_steps=600,
         ),
@@ -186,7 +178,7 @@ def qwen3_32b() -> FaultTolerantTrainer.Config:
             pipeline_parallel_degree=1,
             context_parallel_degree=1,
         ),
-        checkpoint=FTCheckpointManager.Config(
+        checkpoint=TorchFTCheckpointManager.Config(
             enable=False,
             enable_ft_dataloader_checkpoints=False,
             folder="checkpoint",
@@ -213,6 +205,7 @@ def qwen3_32b() -> FaultTolerantTrainer.Config:
 
 def qwen3_moe_debug() -> FaultTolerantTrainer.Config:
     return FaultTolerantTrainer.Config(
+        loss=CrossEntropyLoss.Config(),
         hf_assets_path="./tests/assets/tokenizer",
         dump_folder="./outputs",
         profiler=Profiler.Config(
@@ -226,11 +219,7 @@ def qwen3_moe_debug() -> FaultTolerantTrainer.Config:
             save_tb_folder="tb",
         ),
         model_spec=model_registry("debugmodel_moe"),
-        optimizer=FTOptimizersContainer.Config(
-            name="AdamW",
-            lr=3e-4,
-            eps=1e-8,
-        ),
+        optimizer=default_ft_adamw(lr=3e-4),
         lr_scheduler=LRSchedulersContainer.Config(
             warmup_steps=2,
         ),
@@ -250,9 +239,8 @@ def qwen3_moe_debug() -> FaultTolerantTrainer.Config:
             pipeline_parallel_degree=1,
             context_parallel_degree=1,
             expert_parallel_degree=1,
-            expert_tensor_parallel_degree=1,
         ),
-        checkpoint=FTCheckpointManager.Config(
+        checkpoint=TorchFTCheckpointManager.Config(
             enable=False,
             enable_ft_dataloader_checkpoints=False,
             folder="checkpoint",

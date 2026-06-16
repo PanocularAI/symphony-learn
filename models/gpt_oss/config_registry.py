@@ -4,14 +4,15 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
+from torchtitan.components.loss import CrossEntropyLoss
 from torchtitan.components.lr_scheduler import LRSchedulersContainer
 from torchtitan.components.metrics import MetricsProcessor
 from torchtitan.components.validate import Validator
 from torchtitan.config import ActivationCheckpointConfig, ParallelismConfig, TrainingConfig
-from torchtitan.experiments.ft.checkpoint import FTCheckpointManager
-from torchtitan.experiments.ft.config.job_config import FaultTolerance
-from torchtitan.experiments.ft.optimizer import FTOptimizersContainer
-from torchtitan.experiments.ft.trainer import FaultTolerantTrainer
+from torchtitan.experiments.torchft.checkpoint import TorchFTCheckpointManager
+from torchtitan.experiments.torchft.config.job_config import FaultTolerance
+from torchtitan.experiments.torchft.optimizer import default_ft_adamw
+from torchtitan.experiments.torchft.trainer import FaultTolerantTrainer
 from torchtitan.hf_datasets.text_datasets import HuggingFaceTextDataLoader
 from torchtitan.tools.profiler import Profiler
 
@@ -20,6 +21,7 @@ from . import model_registry
 
 def gptoss_debugmodel() -> FaultTolerantTrainer.Config:
     return FaultTolerantTrainer.Config(
+        loss=CrossEntropyLoss.Config(),
         hf_assets_path="./tests/assets/tokenizer",
         dump_folder="./outputs",
         profiler=Profiler.Config(
@@ -34,11 +36,7 @@ def gptoss_debugmodel() -> FaultTolerantTrainer.Config:
             enable_wandb=False,
         ),
         model_spec=model_registry("debugmodel"),
-        optimizer=FTOptimizersContainer.Config(
-            name="AdamW",
-            lr=8e-4,
-            eps=1e-8,
-        ),
+        optimizer=default_ft_adamw(lr=8e-4),
         lr_scheduler=LRSchedulersContainer.Config(
             warmup_steps=2,
             decay_ratio=0.8,
@@ -61,9 +59,8 @@ def gptoss_debugmodel() -> FaultTolerantTrainer.Config:
             pipeline_parallel_degree=1,
             context_parallel_degree=1,
             expert_parallel_degree=1,
-            expert_tensor_parallel_degree=1,
         ),
-        checkpoint=FTCheckpointManager.Config(
+        checkpoint=TorchFTCheckpointManager.Config(
             enable=False,
             enable_ft_dataloader_checkpoints=False,
             folder="checkpoint",

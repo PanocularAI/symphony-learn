@@ -4,8 +4,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from models.resnet.model.loss import build_cross_entropy_loss
-from torchtitan.protocols.model_spec import FaultTolerantModelSpec
+from torchtitan.experiments.torchft.config.job_config import FaultTolerantModelSpec
 
 from .infra.parallelize import parallelize_resnet
 from .model.args import ResNetModelArgs
@@ -50,7 +49,6 @@ def model_registry(flavor: str) -> FaultTolerantModelSpec:
         model=resnet_configs[flavor],
         parallelize_fn=parallelize_resnet,
         pipelining_fn=None,
-        build_loss_fn=build_cross_entropy_loss,
         post_optimizer_build_fn=None,
         state_dict_adapter=None,
         fragment_fn=None,

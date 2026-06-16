@@ -1,3 +1,6 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "symphony-learn"
@@ -11,3 +14,10 @@ license = {file = "LICENSE"}
 dependencies = [
 
 ]
+
+# Discover the repo-root config registries (models.llama3, models.qwen3, ...) so
+# they import as installed packages instead of relying on the repo root being on
+# sys.path. Keeping the repo root off sys.path is what lets the editable
+# torchtitan/torchft packages win over the same-named submodule source dirs.
+[tool.setuptools.packages.find]
+include = ["models*"]
