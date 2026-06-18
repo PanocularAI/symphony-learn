@@ -259,7 +259,7 @@ def resnet152_cifar10() -> FaultTolerantTrainer.Config:
             dataset="uoft-cs/cifar10",
         ),
         parallelism=ParallelismConfig(
-            data_parallel_replicate_degree=2,
+            data_parallel_replicate_degree=1,
             data_parallel_shard_degree=-1,
             tensor_parallel_degree=1,
             pipeline_parallel_degree=1,
